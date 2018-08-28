@@ -9,6 +9,7 @@
 //*********************************************************
 using System;
 using System.Collections.Generic;
+using Windows.Foundation.Metadata;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Provider;
@@ -16,6 +17,8 @@ using Windows.UI;
 using Windows.UI.Text;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Input;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -29,7 +32,24 @@ namespace AppUIBasics.ControlPages
         public RichEditBoxPage()
         {
             this.InitializeComponent();
-        } 
+
+            if (!ApiInformation.IsApiContractPresent("Windows.Foundation.UniversalApiContract", 6))
+            {
+                enableContactsButton.Visibility = Visibility.Collapsed;
+                enablePlacesButton.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void ContextFlyout_Opening(object sender, object e)
+        {
+            CommandBarFlyout myFlyout = sender as CommandBarFlyout;
+            if (myFlyout.Target == REBCustom)
+            {
+                AppBarButton myButton = new AppBarButton();
+                myButton.Command = new StandardUICommand(StandardUICommandKind.Share);
+                myFlyout.PrimaryCommands.Add(myButton);
+            }
+        }
 
         private async void OpenButton_Click(object sender, RoutedEventArgs e)
         {
@@ -143,6 +163,72 @@ namespace AppUIBasics.ControlPages
             {
                 editor.Width = e.NewSize.Width - 100;
             }
+        }
+
+        //TODO: Check for version of the build
+
+        Windows.UI.Xaml.Documents.ContactContentLinkProvider contactContentLinkProvider;
+        private void EnableContactsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ApiInformation.IsApiContractPresent("Windows.Foundation.UniversalApiContract", 6))
+            {
+
+                if ((bool)enableContactsButton.IsChecked)
+                {
+                    if (editor.ContentLinkProviders == null)
+                    {
+                        editor.ContentLinkProviders = new Windows.UI.Xaml.Documents.ContentLinkProviderCollection();
+                    }
+                    if (contactContentLinkProvider == null)
+                    {
+                        contactContentLinkProvider = new Windows.UI.Xaml.Documents.ContactContentLinkProvider();
+                    }
+                    editor.ContentLinkProviders.Add(contactContentLinkProvider);
+
+                }
+                else
+                {
+                    bool b = editor.ContentLinkProviders.Remove(contactContentLinkProvider);
+                }
+            }
+        }
+
+        Windows.UI.Xaml.Documents.PlaceContentLinkProvider placeContentLinkProvider;
+        private void enablePlacesButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ApiInformation.IsApiContractPresent("Windows.Foundation.UniversalApiContract", 6))
+            {
+
+                if ((bool)enablePlacesButton.IsChecked)
+                {
+                    if (editor.ContentLinkProviders == null)
+                    {
+                        editor.ContentLinkProviders = new Windows.UI.Xaml.Documents.ContentLinkProviderCollection();
+
+                    }
+                    if (placeContentLinkProvider == null)
+                    {
+                        placeContentLinkProvider = new Windows.UI.Xaml.Documents.PlaceContentLinkProvider();
+                    }
+
+                    editor.ContentLinkProviders.Add(placeContentLinkProvider);
+                }
+                else
+                {
+                    bool b = editor.ContentLinkProviders.Remove(placeContentLinkProvider);
+                }
+            }
+
+        }
+
+        private void REBCustom_Loaded(object sender, RoutedEventArgs e)
+        {
+            REBCustom.ContextFlyout.Opening += ContextFlyout_Opening;
+        }
+
+        private void REBCustom_Unloaded(object sender, RoutedEventArgs e)
+        {
+           REBCustom.ContextFlyout.Opening -= ContextFlyout_Opening;
         }
     }
 }
